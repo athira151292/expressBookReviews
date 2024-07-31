@@ -56,8 +56,59 @@ regd_users.post('/login', (req, res) => {
 
 // Add a book review
 regd_users.put('/auth/review/:isbn', (req, res) => {
-  //Write your code here
-  return res.status(300).json({ message: 'Yet to be implemented' });
+  const isbn = req.params.isbn;
+  const username = req.session.authorization.username;
+  const review = req.query.review;
+
+  if (isbn && username && review) {
+    if (books[isbn]) {
+      if (!books[isbn].reviews || !Array.isArray(books[isbn].reviews)) {
+        books[isbn].reviews = []; // If the book has no reviews yet or reviews is not an array
+      }
+
+      const existingReviewIndex = books[isbn].reviews.findIndex(
+        (review) => review.username === username
+      );
+      if (existingReviewIndex !== -1) {
+        // If the user has already posted a review
+        books[isbn].reviews[existingReviewIndex].review = review;
+        res.status(200).json({ message: 'Review modified successfully' });
+      } else {
+        // If the user has not posted a review yet
+        books[isbn].reviews.push({ username: username, review: review });
+        res.status(200).json({ message: 'Review added successfully' });
+      }
+    } else {
+      return res.status(404).json({ message: 'Book not found' });
+    }
+  } else {
+    return res.status(404).json({ message: 'Invalid request' });
+  }
+});
+
+// Delete a book review
+regd_users.delete('/auth/review/:isbn', (req, res) => {
+  const isbn = req.params.isbn;
+  const username = req.session.authorization.username;
+  if (isbn && username) {
+    if (Array.isArray(books[isbn].reviews)) {
+      if (books[isbn]) {
+        const existingReviewIndex = books[isbn].reviews?.findIndex(
+          (review) => review.username === username
+        );
+        if (existingReviewIndex !== -1) {
+          books[isbn].reviews.splice(existingReviewIndex, 1);
+          res.status(200).json({ message: 'Review deleted successfully' });
+        } else {
+          return res.status(404).json({ message: 'Review not found' });
+        }
+      } else {
+        return res.status(404).json({ message: 'Book not found' });
+      }
+    } else {
+      return res.status(404).json({ message: 'Invalid request' });
+    }
+  }
 });
 
 module.exports.authenticated = regd_users;

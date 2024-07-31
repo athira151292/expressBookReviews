@@ -1,8 +1,11 @@
 const express = require('express');
+const axios = require('axios');
 let books = require('./booksdb.js');
 let isValid = require('./auth_users.js').isValid;
 let users = require('./auth_users.js').users;
 const public_users = express.Router();
+
+const BASE_URL = 'http://localhost:5001';
 
 public_users.post('/register', (req, res) => {
   const username = req.body.username;
@@ -10,16 +13,19 @@ public_users.post('/register', (req, res) => {
   if (username === '' || password === '') {
     return res.status(400).json({ message: 'Username or password is empty' });
   }
-  if (isValid(username)) {
-    return res.status(400).json({ message: 'User already exists' });
-  } else {
-    users.push({ username, password });
-    return res.status(200).json({ message: 'User created' });
+  if (username && password) {
+    if (isValid(username)) {
+      return res.status(400).json({ message: 'Username already exists' });
+    } else {
+      users.push({ username, password });
+      return res.status(200).json({ message: 'User created' });
+    }
   }
+  return res.status(400).json({ message: 'Username or password is empty' });
 });
 
 // Get the book list available in the shop
-public_users.get('/', function (req, res) {
+public_users.get('/', async function (req, res) {
   return res.send(JSON.stringify(books));
 });
 
